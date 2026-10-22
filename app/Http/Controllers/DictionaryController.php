@@ -66,13 +66,20 @@ class DictionaryController extends Controller
             'Minum', 'Beli', 'Datang', 'Nama', 'Ibu', 'Ayah'
         ];
 
-        if ($request->wantsJson()) {
+        if ($request->wantsJson() || $request->ajax() || $request->boolean('json')) {
             return response()->json([
                 'success' => true,
                 'data' => $words->items(),
                 'total' => $words->total(),
                 'current_page' => $words->currentPage(),
                 'last_page' => $words->lastPage(),
+                'first_item' => $words->firstItem() ?? 0,
+                'last_item' => $words->lastItem() ?? 0,
+                'has_pages' => $words->hasPages(),
+                'prev_page_url' => $words->previousPageUrl(),
+                'next_page_url' => $words->nextPageUrl(),
+                'q' => $q,
+                'category' => $category,
             ]);
         }
 
@@ -94,16 +101,51 @@ class DictionaryController extends Controller
     public function search(Request $request)
     {
         $q = trim($request->input('q', ''));
-        if (empty($q)) {
-            return response()->json(['results' => []]);
+        $category = $request->input('category', 'all');
+
+        $query = Dictionary::query();
+
+        if ($q !== '') {
+            if ($category === 'indonesia') {
+                $query->where('indonesia', 'like', "%{$q}%");
+            } elseif ($category === 'krama_alus') {
+                $query->where('krama_alus', 'like', "%{$q}%");
+            } elseif ($category === 'krama_inggil') {
+                $query->where('krama_inggil', 'like', "%{$q}%");
+            } elseif ($category === 'ngoko') {
+                $query->where('ngoko', 'like', "%{$q}%");
+            } else {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('indonesia', 'like', "%{$q}%")
+                        ->orWhere('krama_alus', 'like', "%{$q}%")
+                        ->orWhere('krama_inggil', 'like', "%{$q}%")
+                        ->orWhere('ngoko', 'like', "%{$q}%");
+                });
+            }
+
+            $query->orderByRaw("
+                CASE 
+                    WHEN LOWER(indonesia) = LOWER(?) THEN 0
+                    WHEN LOWER(ngoko) = LOWER(?) THEN 1
+                    WHEN LOWER(krama_alus) = LOWER(?) THEN 2
+                    WHEN LOWER(krama_inggil) = LOWER(?) THEN 3
+                    WHEN LOWER(indonesia) LIKE LOWER(?) THEN 4
+                    WHEN LOWER(ngoko) LIKE LOWER(?) THEN 5
+                    ELSE 6
+                END ASC
+            ", [$q, $q, $q, $q, "{$q}%", "{$q}%"])
+            ->orderBy('indonesia', 'asc');
+        } else {
+            $query->orderBy('indonesia', 'asc');
         }
 
-        $results = Dictionary::search($q)
-            ->limit(10)
-            ->get();
+        $results = $query->limit(20)->get();
 
         return response()->json([
+            'success' => true,
             'results' => $results,
+            'data' => $results,
+            'total' => $results->count(),
         ]);
     }
 }

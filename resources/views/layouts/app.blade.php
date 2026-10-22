@@ -23,6 +23,7 @@
         body{ font-family:'Plus Jakarta Sans', sans-serif; background:var(--cream); color:var(--ink); }
         .font-display{ font-family:'Space Grotesk', sans-serif; }
         .font-mono{ font-family:'IBM Plex Mono', monospace; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="h-full antialiased">
@@ -149,8 +150,6 @@
                 </a>
             </div>
             @endauth
-        </div>
-    </header>
         </div>
     </header>
 
