@@ -23,6 +23,7 @@
         body{ font-family:'Plus Jakarta Sans', sans-serif; background:var(--cream); color:var(--ink); }
         .font-display{ font-family:'Space Grotesk', sans-serif; }
         .font-mono{ font-family:'IBM Plex Mono', monospace; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="h-full antialiased">
@@ -60,10 +61,16 @@
                    style="{{ request()->routeIs('leaderboard') ? 'background:var(--wedel);color:#fff' : 'color:var(--muted)' }}">
                     Peringkat
                 </a>
+                <a href="{{ route('dictionary.index') }}"
+                   class="px-3.5 py-2 text-sm font-medium rounded-full transition-colors"
+                   style="{{ request()->routeIs('dictionary.*') ? 'background:var(--wedel);color:#fff' : 'color:var(--muted)' }}">
+                    Kamus
+                </a>
             </nav>
 
             <div class="flex-1"></div>
 
+            @auth
             {{-- XP Chip --}}
             <div class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold select-none border"
                  style="background:#FBF3DF; border-color:#EAD9AE; color:var(--soga)">
@@ -133,6 +140,16 @@
                     </form>
                 </div>
             </div>
+            @else
+            <div class="flex items-center gap-2">
+                <a href="{{ route('login') }}" class="text-sm font-medium px-3.5 py-1.5 rounded-full hover:opacity-80 transition" style="color:var(--ink)">
+                    Masuk
+                </a>
+                <a href="{{ route('register') }}" class="text-sm font-semibold text-white px-4 py-1.5 rounded-full hover:opacity-90 transition shadow-sm" style="background:var(--wedel)">
+                    Daftar
+                </a>
+            </div>
+            @endauth
         </div>
     </header>
 
@@ -194,6 +211,16 @@
                 </svg>
                 Peringkat
             </a>
+            <a href="{{ route('dictionary.index') }}"
+               class="flex-1 flex flex-col items-center gap-0.5 pt-3 pb-2.5 text-xs font-medium transition"
+               style="color:{{ request()->routeIs('dictionary.*') ? 'var(--wedel)' : 'var(--muted)' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                Kamus
+            </a>
+            @auth
             <a href="{{ route('profile') }}"
                class="flex-1 flex flex-col items-center gap-0.5 pt-3 pb-2.5 text-xs font-medium transition"
                style="color:{{ request()->routeIs('profile') ? 'var(--wedel)' : 'var(--muted)' }}">
@@ -203,6 +230,17 @@
                 </svg>
                 Profil
             </a>
+            @else
+            <a href="{{ route('login') }}"
+               class="flex-1 flex flex-col items-center gap-0.5 pt-3 pb-2.5 text-xs font-medium transition"
+               style="color:var(--muted)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                </svg>
+                Masuk
+            </a>
+            @endauth
         </div>
     </nav>
 

@@ -1,10 +1,15 @@
 <?php
 
+use App\Http\Controllers\DictionaryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
+
+// Kamus Kosa Kata (Translator Indonesia - Jawa)
+Route::get('/kamus', [DictionaryController::class, 'index'])->name('dictionary.index');
+Route::get('/kamus/cari', [DictionaryController::class, 'search'])->name('dictionary.search');
 
 Route::get('/login', function () {
     return view('auth.login');
