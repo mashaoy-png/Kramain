@@ -3,9 +3,7 @@
 use App\Http\Controllers\DictionaryController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('welcome');
+Route::get('/', [DictionaryController::class, 'welcome'])->name('welcome');
 
 // Kamus Kosa Kata (Translator Indonesia - Jawa)
 Route::get('/kamus', [DictionaryController::class, 'index'])->name('dictionary.index');

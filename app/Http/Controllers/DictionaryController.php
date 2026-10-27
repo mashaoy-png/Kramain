@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 class DictionaryController extends Controller
 {
     /**
-     * Menampilkan halaman pencarian kosa kata dan hasil pencarian.
+     * Helper untuk mengambil data dictionary berdasarkan filter pencarian dan kategori.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
+     * @param  int  $perPage
+     * @return array
      */
-    public function index(Request $request)
+    protected function getDictionaryData(Request $request, int $perPage = 20)
     {
         $q = trim($request->input('q', ''));
         $category = $request->input('category', 'all');
@@ -52,12 +53,12 @@ class DictionaryController extends Controller
                 END ASC
             ", [$q, $q, $q, $q, "{$q}%", "{$q}%"])
             ->orderBy('indonesia', 'asc');
-        } else {
-            $query->orderBy('indonesia', 'asc');
-        }
 
-        $perPage = 20;
-        $words = $query->paginate($perPage)->withQueryString();
+            $words = $query->paginate($perPage)->withQueryString();
+        } else {
+            // Jangan memuat daftar kosa kata secara default agar tampilan tidak memakan ruang
+            $words = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
+        }
         $totalWords = Dictionary::count();
 
         // Kosa kata populer / rekomendasi pencarian cepat
@@ -66,34 +67,78 @@ class DictionaryController extends Controller
             'Minum', 'Beli', 'Datang', 'Nama', 'Ibu', 'Ayah'
         ];
 
-        if ($request->wantsJson() || $request->ajax() || $request->boolean('json')) {
-            return response()->json([
-                'success' => true,
-                'data' => $words->items(),
-                'total' => $words->total(),
-                'current_page' => $words->currentPage(),
-                'last_page' => $words->lastPage(),
-                'first_item' => $words->firstItem() ?? 0,
-                'last_item' => $words->lastItem() ?? 0,
-                'has_pages' => $words->hasPages(),
-                'prev_page_url' => $words->previousPageUrl(),
-                'next_page_url' => $words->nextPageUrl(),
-                'q' => $q,
-                'category' => $category,
-            ]);
-        }
-
-        return view('dictionary.index', [
+        return [
             'words' => $words,
             'q' => $q,
             'category' => $category,
             'totalWords' => $totalWords,
             'quickKeywords' => $quickKeywords,
+        ];
+    }
+
+    /**
+     * Format response JSON standar untuk request AJAX / API.
+     *
+     * @param  array  $data
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function jsonDictionaryResponse(array $data)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $data['words']->items(),
+            'total' => $data['words']->total(),
+            'current_page' => $data['words']->currentPage(),
+            'last_page' => $data['words']->lastPage(),
+            'first_item' => $data['words']->firstItem() ?? 0,
+            'last_item' => $data['words']->lastItem() ?? 0,
+            'has_pages' => $data['words']->hasPages(),
+            'prev_page_url' => $data['words']->previousPageUrl(),
+            'next_page_url' => $data['words']->nextPageUrl(),
+            'q' => $data['q'],
+            'category' => $data['category'],
         ]);
     }
 
     /**
-     * Method opsional untuk endpoint pencarian via AJAX / API.
+     * Tampilan awal (landing page) Kramain yang menyatu dengan Kamus Bahasa Jawa di halaman depan.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
+     */
+    public function welcome(Request $request)
+    {
+        $data = $this->getDictionaryData($request);
+
+        if ($request->wantsJson() || $request->ajax() || $request->boolean('json')) {
+            return $this->jsonDictionaryResponse($data);
+        }
+
+        return view('welcome', $data);
+    }
+
+    /**
+     * Menampilkan halaman pencarian kosa kata atau redirect ke halaman depan satu page.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function index(Request $request)
+    {
+        $data = $this->getDictionaryData($request);
+
+        if ($request->wantsJson() || $request->ajax() || $request->boolean('json')) {
+            return $this->jsonDictionaryResponse($data);
+        }
+
+        // Arahkan ke halaman depan dengan anchor #kamus agar satu page dengan tampilan awal
+        $queryParams = $request->query();
+        $redirectUrl = route('welcome', $queryParams) . '#kamus';
+        return redirect($redirectUrl);
+    }
+
+    /**
+     * Method endpoint pencarian via AJAX / API.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -149,3 +194,4 @@ class DictionaryController extends Controller
         ]);
     }
 }
+
